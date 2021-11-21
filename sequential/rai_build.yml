@@ -1,0 +1,20 @@
+# lenkf
+rai:
+  version: 0.2
+  image: raiproject/pumps2018:amd64-cuda100
+resources:
+  cpu:
+    architecture: ppc64le
+  gpu:
+    count: 1
+  network: false
+  cache: false
+commands:
+  build:
+#    - cp -r /src .
+#    - cmake /src
+    - cd libmdb_matrix
+    - make
+    - cd ../lenkf
+    - make
+    - ./blas_test
