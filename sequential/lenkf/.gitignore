@@ -1,7 +1,8 @@
 *.d
+*.d.*
 *.o
 /TAGS
-/*_test*
+# /*_test*
 /convmtx
 /lenkf
 /compute_P_HT
