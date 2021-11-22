@@ -1,7 +1,7 @@
 # lenkf
 rai:
   version: 0.2
-  image: raiproject/pumps2018:amd64-cuda100
+  image: lindaman223/ece508:lib_update
 resources:
   cpu:
     architecture: ppc64le
@@ -11,10 +11,4 @@ resources:
   cache: false
 commands:
   build:
-#    - cp -r /src .
-#    - cmake /src
-    - cd libmdb_matrix
-    - make
-    - cd ../lenkf
-    - make
-    - ./blas_test
+    - /bin/bash /src/build.sh
