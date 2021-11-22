@@ -1,0 +1,7 @@
+*.d
+*.o
+/TAGS
+/*_test*
+/convmtx
+/lenkf
+/compute_P_HT
