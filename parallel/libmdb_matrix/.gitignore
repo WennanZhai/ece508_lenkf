@@ -1,5 +1,8 @@
-*.d
-*.o
+*
+!*.*
+*.d*
+*.o*
+
 /*_test
 /TAGS
 /libmdb_matrix_d.so
