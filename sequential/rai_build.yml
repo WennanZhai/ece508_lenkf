@@ -12,3 +12,14 @@ resources:
 commands:
   build:
     - /bin/bash /src/build.sh
+    # - cp -r /src .
+    # - cd ./src/libmdb_matrix/
+    # - make
+    # - cd /build/
+    # - cmake /src
+    # - make
+    # - echo ".........Finished building.........."
+    # - ls
+    # - ./lenkf
+    # - ./blas_test
+    # - ./ensemble_test

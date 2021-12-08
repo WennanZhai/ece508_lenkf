@@ -1,0 +1,16 @@
+*
+!*.*
+*.d*
+*.o*
+
+/*_test
+/TAGS
+/libmdb_matrix_d.so
+/libmdb_matrix_s.so
+/libmdb_matrix_d.a
+/libmdb_matrix_s.a
+/mdb_matrix_d.h
+/mdb_matrix_s.h
+/python/__pycache__
+/python/libmdb_matrix.egg-info
+/sb_toe_r_to_coo
