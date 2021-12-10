@@ -10,7 +10,7 @@ extern "C"{
 #define BLOCK_SIZE 512
 
 __global__ void test_kernel(uint32_t *in, uint32_t *out, int len){
-    if(threadIdx.x == 1)    printf("Kernel is running");
+    if(threadIdx.x == 1)    printf("Kernel is running\n");
 }
 
 extern "C" 

@@ -41,7 +41,8 @@ if __name__ == '__main__':
     C = toeplitz(row0)
 
     # RUN CODE
-    compute_P_HT_c = sh.Command('../compute_P_HT')
+    # compute_P_HT_c = sh.Command('../compute_P_HT')
+    compute_P_HT_c = sh.Command('../../../compute_P_HT')
     print(compute_P_HT_c(P_HT_fname,
                          e_fname,
                          H_fname,

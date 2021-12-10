@@ -30,6 +30,7 @@ include(CTest)
 
 add_library(test_kernel SHARED 
   compute.cu 
+  helper.hpp
 )
 
 
