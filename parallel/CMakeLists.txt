@@ -17,9 +17,13 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(CTest)
 
+
+
 set(LIB_DIR "/usr/lib/x86_64-linux-gnu")
 # set(CUR_DIR "/mnt/e/lenkf/parallel")
 set(CUR_DIR "/build/src")
+
+add_subdirectory(${CUR_DIR}/kernel_code/ ${CUR_DIR}/kernel_code/build/)
 
 add_library(libconfuse SHARED IMPORTED)
 set_target_properties(libconfuse PROPERTIES IMPORTED_LOCATION
@@ -70,13 +74,14 @@ endif()
 
 
 set(LIBS 
-    libm libgsl libconfuse libopenblas libfftw3 libmdb
+    libm libgsl libconfuse libopenblas libfftw3 libmdb test_kernel
 )
 
 set(INCLUDE
     ${CUR_DIR}/lenkf
     ${CUR_DIR}/libmdb_matrix
     /usr/include
+    ${CUR_DIR}/kernel_code
 )
 
 add_definitions(-DLINUX)
@@ -155,4 +160,3 @@ target_include_directories(randn_conv_test_new PUBLIC ${INCLUDE})
 target_include_directories(blas_test PUBLIC ${INCLUDE})
 target_include_directories(convmtx PUBLIC ${INCLUDE})
 target_include_directories(compute_P_HT PUBLIC ${INCLUDE})
-

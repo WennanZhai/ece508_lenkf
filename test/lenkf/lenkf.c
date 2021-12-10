@@ -28,17 +28,17 @@ static int N_CLOCKS = 0;
 static cfg_bool_t ENABLE_PROFILING = cfg_false;
 
 
-/******************************************************************************/
+    /******************************************************************************/
 
-/*
+    /*
 static void compute_P_HT(arg_bundle *ab, const sparse_rcs *H,
 			 const int row_H, const char name_H,
 			 const int n_rows);
 */
 
-void compute_P_HT(arg_bundle *ab, const sparse_rcs *H,
-                  const int row_H, const char name_H,
-                  const int n_rows);
+    void compute_P_HT(arg_bundle *ab, const sparse_rcs *H,
+                      const int row_H, const char name_H,
+                      const int n_rows);
 
 static void compute_H_P_HT(arg_bundle *ab, const sparse_rcs *H,
 			   const int row_H, const char name_H,

@@ -1,10 +1,29 @@
-cmake_minimum_required(VERSION 3.10)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+
+# set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(lenkf)
 
+find_package(CUDA REQUIRED)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COLOR_MAKEFILE ON)
+set(VERBOSE_BUILD ON)
+set(CMAKE_CXX_STANDARD 11)
+set(DEFAULT_BUILD_TYPE "Release")
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+include(CTest)
+
+
+
 set(LIB_DIR "/usr/lib/x86_64-linux-gnu")
+# set(CUR_DIR "/mnt/e/lenkf/parallel")
+set(CUR_DIR "/build/src")
+
+add_subdirectory(${CUR_DIR}/kernel_code/ ${CUR_DIR}/kernel_code/build/)
 
 add_library(libconfuse SHARED IMPORTED)
 set_target_properties(libconfuse PROPERTIES IMPORTED_LOCATION
@@ -35,7 +54,7 @@ if(ELEM STREQUAL "double")
     add_definitions(-DLENKF_DOUBLE_ELEM)
 
     set_target_properties(libmdb PROPERTIES IMPORTED_LOCATION
-        ${PROJECT_SOURCE_DIR}/libmdb_matrix/libmdb_matrix_d.so 
+        ${CUR_DIR}/libmdb_matrix/libmdb_matrix_d.so 
     )
 
     set_target_properties(libfftw3 PROPERTIES IMPORTED_LOCATION
@@ -45,7 +64,7 @@ else()
     add_definitions(-DLENKF_FLOAT_ELEM)
 
     set_target_properties(libmdb PROPERTIES IMPORTED_LOCATION
-        ${PROJECT_SOURCE_DIR}/libmdb_matrix/libmdb_matrix_s.so 
+        ${CUR_DIR}/libmdb_matrix/libmdb_matrix_s.so 
     )
 
     set_target_properties(libfftw3f PROPERTIES IMPORTED_LOCATION
@@ -55,68 +74,76 @@ endif()
 
 
 set(LIBS 
-    libm libgsl libconfuse libopenblas libfftw3 libmdb
+    libm libgsl libconfuse libopenblas libfftw3 libmdb test_kernel
 )
 
 set(INCLUDE
-    ${PROJECT_SOURCE_DIR}/lenkf
-    ${PROJECT_SOURCE_DIR}/libmdb_matrix
+    ${CUR_DIR}/lenkf
+    ${CUR_DIR}/libmdb_matrix
     /usr/include
+    ${CUR_DIR}/kernel_code
 )
 
 add_definitions(-DLINUX)
 add_definitions(-DOPENBLAS)
 
 add_executable(lenkf
-    ${PROJECT_SOURCE_DIR}/lenkf/lenkf.c
-    ${PROJECT_SOURCE_DIR}/lenkf/lenkf_main.c
-    ${PROJECT_SOURCE_DIR}/lenkf/ensemble.c
-    ${PROJECT_SOURCE_DIR}/lenkf/randn.c
-    ${PROJECT_SOURCE_DIR}/lenkf/util.c
-    ${PROJECT_SOURCE_DIR}/lenkf/lenkf_config.c
-    ${PROJECT_SOURCE_DIR}/lenkf/arg_bundle.c
-    ${PROJECT_SOURCE_DIR}/lenkf/edot_table.c
+    ${CUR_DIR}/lenkf/lenkf.c
+    ${CUR_DIR}/lenkf/lenkf_main.c
+    ${CUR_DIR}/lenkf/ensemble.c
+    ${CUR_DIR}/lenkf/randn.c
+    ${CUR_DIR}/lenkf/util.c
+    ${CUR_DIR}/lenkf/lenkf_config.c
+    ${CUR_DIR}/lenkf/arg_bundle.c
+    ${CUR_DIR}/lenkf/edot_table.c
 )
+target_compile_features(lenkf PUBLIC cxx_std_11)
 
 add_executable(ensemble_test
-    ${PROJECT_SOURCE_DIR}/lenkf/ensemble.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/ensemble_test.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/randn.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/util.c
+    ${CUR_DIR}/lenkf/ensemble.c 
+    ${CUR_DIR}/lenkf/ensemble_test.c 
+    ${CUR_DIR}/lenkf/randn.c 
+    ${CUR_DIR}/lenkf/util.c
 )
+target_compile_features(ensemble_test PUBLIC cxx_std_11)
 
 add_executable(randn_test
-    ${PROJECT_SOURCE_DIR}/lenkf/randn_test.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/randn.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/ensemble.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/util.c 
+    ${CUR_DIR}/lenkf/randn_test.c 
+    ${CUR_DIR}/lenkf/randn.c 
+    ${CUR_DIR}/lenkf/ensemble.c 
+    ${CUR_DIR}/lenkf/util.c 
 )
+target_compile_features(randn_test PUBLIC cxx_std_11)
 
 add_executable(randn_conv_test_new
-    ${PROJECT_SOURCE_DIR}/lenkf/randn_conv_test_new.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/randn.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/ensemble.c 
+    ${CUR_DIR}/lenkf/randn_conv_test_new.c 
+    ${CUR_DIR}/lenkf/randn.c 
+    ${CUR_DIR}/lenkf/ensemble.c 
 )
+target_compile_features(randn_conv_test_new PUBLIC cxx_std_11)
 
 add_executable(blas_test
-    ${PROJECT_SOURCE_DIR}/lenkf/blas_test.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/randn.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/util.c 
+    ${CUR_DIR}/lenkf/blas_test.c 
+    ${CUR_DIR}/lenkf/randn.c 
+    ${CUR_DIR}/lenkf/util.c 
 )
+target_compile_features(blas_test PUBLIC cxx_std_11)
 
 add_executable(convmtx
-    ${PROJECT_SOURCE_DIR}/lenkf/convmtx.c 
+    ${CUR_DIR}/lenkf/convmtx.c 
 )
+target_compile_features(convmtx PUBLIC cxx_std_11)
 
 add_executable(compute_P_HT
-    ${PROJECT_SOURCE_DIR}/lenkf/compute_P_HT.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/randn.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/ensemble.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/lenkf.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/arg_bundle.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/edot_table.c 
-    ${PROJECT_SOURCE_DIR}/lenkf/util.c 
+    ${CUR_DIR}/lenkf/compute_P_HT.c 
+    ${CUR_DIR}/lenkf/randn.c 
+    ${CUR_DIR}/lenkf/ensemble.c 
+    ${CUR_DIR}/lenkf/lenkf.c
+    ${CUR_DIR}/lenkf/arg_bundle.c 
+    ${CUR_DIR}/lenkf/edot_table.c 
+    ${CUR_DIR}/lenkf/util.c 
 )
+target_compile_features(compute_P_HT PUBLIC cxx_std_11)
 
 target_link_libraries(lenkf ${LIBS})
 target_link_libraries(ensemble_test ${LIBS})

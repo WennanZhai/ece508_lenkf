@@ -2,7 +2,14 @@
 
 #include "ensemble.h"
 #include "randn.h"
+#include "compute.h"
 
+extern void test_kernel_wrapper(int inputLength);
+
+void test_kernel_run(int inputLength)
+{
+   test_kernel_wrapper(inputLength);
+}
 
 int main(void) {
   const int n = 4;
@@ -11,6 +18,9 @@ int main(void) {
   vector *mean;
   int i, j;
   int count;
+
+  int length = 1024;
+  test_kernel_run(length);
   
   randn_init();
   

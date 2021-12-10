@@ -209,22 +209,22 @@ $(TEST_TARGET): libmdb_matrix_s.so libmdb_matrix_d.so
 # Adapted from Section 4.14 Generating Prerequisites Automatically of
 # the reference manual for GNU make
 
-DEPEND_S = $(patsubst %.c,%_s.d,$(wildcard *.c))
-DEPEND_D = $(patsubst %.c,%_d.d,$(wildcard *.c))
+# DEPEND_S = $(patsubst %.c,%_s.d,$(wildcard *.c))
+# DEPEND_D = $(patsubst %.c,%_d.d,$(wildcard *.c))
 
-%_s.d: %.c
-	@set -e; rm -f $@; \
-        $(CC) -MM -MG -MT $(patsubst %.d,%.o,$@) $(CPPFLAGS) $(DEFINES) -DFLOAT_ELEM $< > $@.$$$$; \
-        sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-        rm -f $@.$$$$
+# %_s.d: %.c
+# 	@set -e; rm -f $@; \
+#         $(CC) -MM -MG -MT $(patsubst %.d,%.o,$@) $(CPPFLAGS) $(DEFINES) -DFLOAT_ELEM $< > $@.$$$$; \
+#         sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+#         rm -f $@.$$$$
 
-%_d.d: %.c
-	@set -e; rm -f $@; \
-        $(CC) -MM -MG -MT $(patsubst %.d,%.o,$@) $(CPPFLAGS) $(DEFINES) -DDOUBLE_ELEM $< > $@.$$$$; \
-        sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-        rm -f $@.$$$$
+# %_d.d: %.c
+# 	@set -e; rm -f $@; \
+#         $(CC) -MM -MG -MT $(patsubst %.d,%.o,$@) $(CPPFLAGS) $(DEFINES) -DDOUBLE_ELEM $< > $@.$$$$; \
+#         sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+#         rm -f $@.$$$$
 
-include $(DEPEND_S) $(DEPEND_D)
+# include $(DEPEND_S) $(DEPEND_D)
 
 ################################################################################
 
