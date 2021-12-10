@@ -17,5 +17,5 @@ echo -e "\n.........Running blas_test.........."
 echo -e "\n.........Running ensemble_test.........."
 ./ensemble_test
 
-# python3 src/libmdb_matrix/python/setup.py develop
-# python3 src/lenkf/python/compute_P_HT.py
+python3 src/libmdb_matrix/python/setup.py develop
+python3 src/lenkf/python/compute_P_HT.py

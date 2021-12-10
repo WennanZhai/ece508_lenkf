@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # RUN CODE
     # compute_P_HT_c = sh.Command('../compute_P_HT')
-    compute_P_HT_c = sh.Command('../../../compute_P_HT')
+    compute_P_HT_c = sh.Command('/build/compute_P_HT')
     print(compute_P_HT_c(P_HT_fname,
                          e_fname,
                          H_fname,
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     export_sb_toe_r(C_fname, blocks)
 
     # RUN CODE
-    compute_P_HT_c = sh.Command('../compute_P_HT')
+    compute_P_HT_c = sh.Command('/build/compute_P_HT')
     print(compute_P_HT_c(P_HT_fname,
                          e_fname,
                          H_fname,

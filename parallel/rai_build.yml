@@ -1,7 +1,7 @@
 # lenkf
 rai:
   version: 0.2
-  image: lindaman223/ece508:lib_update
+  image: lindaman223/ece508:update_python
 resources:
   cpu:
     architecture: ppc64le
