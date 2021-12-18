@@ -11,9 +11,9 @@
 /*****************************************************************************/
 
 typedef struct {
-  int N;
-  int m, n;
-  elem *v;
+  int N; //len(v)
+  int m, n; //m = rows, n = cols
+  elem *v; //array of values
   int *j;
   int *r;
 } sparse_rcs;

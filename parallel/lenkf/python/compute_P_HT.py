@@ -15,7 +15,7 @@ if __name__ == '__main__':
     np.random.seed(0)
 
     # Example with 1 physical dimension
-    N = 100
+    N = 10000
     L = 10
     M = 20
 
@@ -25,12 +25,16 @@ if __name__ == '__main__':
     e_fname = '/tmp/e'
     H_fname = '/tmp/H'
     C_fname = '/tmp/C'
+    HT_fname = '/tmp/HT'
+    eT_fname = '/tmp/eT'
 
     e = np.random.randn(N, L)
     export_full_r(e_fname, e)
+    export_full_r(eT_fname, e.T)
 
     H = scipy.sparse.random(M, N, density=H_density, format='csr')
     export_rcs(H_fname, H)
+    export_rcs(HT_fname, H.T)
 
     assert N % 2 == 0
     N2 = int(N/2)
@@ -47,6 +51,8 @@ if __name__ == '__main__':
                          e_fname,
                          H_fname,
                          C_fname,
+                         HT_fname,
+                         eT_fname,
                          _err_to_out=True,
                          _out=sys.stdout))
 

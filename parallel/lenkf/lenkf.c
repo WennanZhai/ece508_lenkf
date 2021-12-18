@@ -158,24 +158,23 @@ void compute_P_HT(arg_bundle *ab, const sparse_rcs *H,
       sb_toe_r_nz_it_init(C_it, j);
 
       while (sb_toe_r_nz_it_has_next(C_it)) {
-	C_v = sb_toe_r_nz_it_next(C_it);
+        
+	      C_v = sb_toe_r_nz_it_next(C_it);
 
-	if (edot_table_find(table, j, C_it->j, e)) {
-	  edot_ij = table->record->edot;
-	}
-	else {
-	  edot_ij = edot_table_add(table, j, C_it->j, e);
-	}
+	      if (edot_table_find(table, j, C_it->j, e)) {
+	        edot_ij = table->record->edot;
+	      } else {
+	        edot_ij = edot_table_add(table, j, C_it->j, e);
+	      }
 
-	/* Matrix element indexed in [j][i] order because the H_P
-	   matrix is stored column-wise */
-	H_P_col->v[C_it->j] += C_v * H->v[j_index] * edot_ij;
+	      /* Matrix element indexed in [j][i] order because the H_P
+	      matrix is stored column-wise */
+	      H_P_col->v[C_it->j] += C_v * H->v[j_index] * edot_ij;
       }
     }
-
     for (j = 0; j < N; j++) {
       if (H_P_col->v[j] != 0) {
-	sparse_lil_append(P_HT, j, i - row_H, H_P_col->v[j]);
+	      sparse_lil_append(P_HT, j, i - row_H, H_P_col->v[j]);
       }
     }
   }
@@ -788,6 +787,7 @@ void build_filename(char *buffer, int buffer_size, lenkf_config *config, char *p
 
 void lenkf(full_c *x_mean_final, lenkf_config *config,
 	   lenkf_stats *stats) {
+  printf("LENKFLENKF");
   arg_bundle *ab;
   int i, row, n_rows;
   elem zero = 0, inv_sqrt_lambda = ((elem) 1) / sqrte(config->lambda);

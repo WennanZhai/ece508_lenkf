@@ -1,0 +1,28 @@
+
+typedef struct {
+  int N; //len(v)
+  int m, n; //m = rows, n = cols
+  double *v; //array of values
+  int *j;
+  int *r;
+} sparse_rcs;
+
+typedef struct {
+  int m, n;
+  double *v_vector;
+  double **v;
+} full_r;
+
+typedef struct ensemble_struct {
+  int N;             /* dim of each member of the ensemble */
+  int L;             /* # of members in the ensemble */
+
+  full_r *X;
+} ensemble;
+
+typedef struct {
+  int m, n, N;
+  double *v;
+  int *i;
+  int *j;
+} sparse_coo;

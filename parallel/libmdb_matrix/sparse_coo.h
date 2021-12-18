@@ -4,11 +4,10 @@
 #include "elem.h"
 
 typedef struct {
+  int m, n, N;
   elem *v;
   int *i;
   int *j;
-
-  int m, n, N;
 } sparse_coo;
 
 
