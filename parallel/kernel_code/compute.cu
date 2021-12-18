@@ -142,12 +142,17 @@ void critical_kernel_wrapper(sparse_rcs * HT,
     dim3 dimGridCooDense(ceil(C->N / (1.0 * BLOCK_SIZE)), 1, 1);
 
     timer_start("Performing GPU Critical Step computation");
+    //Here we multiply e against eT giving us the values in vector eeTv
     mysgemm<<<dimGridSgemm, dimBlockSgemm>>>(e->X->m, eT->X->n, e->X->n, ev, eTv, eeTv);
     cudaDeviceSynchronize();
+    //Next we multiply the dense eeTv vector against the coo sparse C data
     coo_dense_elem_mul<<<dimGridCooDense, dimBlockCooDense>>>(C->N, Cv, Ci, Cj,
                                                                 eeTv, e->X->m, eT->X->n,
                                                                 CeeTv);
     cudaDeviceSynchronize();
+    //The output coo sparse from the previous step is converted to csr
+    //Csr simply has a compressed row vector, but is the same as coo otherwise
+        //thus Ci is converted to rcsCi
     status = cusparseXcoo2csr(handle, Ci, C->N, C->m, rcsCi, CUSPARSE_INDEX_BASE_ZERO);
     cudaDeviceSynchronize();
     //Sparse Matrix Multiplication of 2 csr sparse matrices (rcsCi, Cj, CeeTv) & (HT->r, HT->j, HT->v)
