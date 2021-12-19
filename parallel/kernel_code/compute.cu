@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cuda_runtime_api.h>
 #include <cusparse.h>
+#include <cuda.h>
 #include "helper.hpp"
 #include "structs.hu"
 
@@ -159,18 +160,21 @@ void critical_kernel_wrapper(sparse_rcs * HT,
     //Sparse Matrix Multiplication of 2 csr sparse matrices (rcsCi, Cj, CeeTv) & (HT->r, HT->j, HT->v)
 
     //initializing parameters for cusparseSpGEMM
-    double              alpha       = 1.0f;
-    double              beta        = 0.0f;
+    // double              alpha       = 1.0f;
+    // double              beta        = 0.0f;
     cusparseOperation_t opA         = CUSPARSE_OPERATION_NON_TRANSPOSE;
     cusparseOperation_t opB         = CUSPARSE_OPERATION_NON_TRANSPOSE;
-    cudaDataType_t      computeType = CUDA_R_64F;
+    // cudaDataType_t      computeType = CUDA_R_64F;
+
 
     //device pointers for HT and PHT (matB and matC, matA is CeeTv)
     double *valHT;
-    int *rowHT, *colHT;
-
+    int *rowHT, *colHT;  
+    
     double *valPHT;
     int *rowPHT, *colPHT;
+
+    int *nnzC;
 
     //allocate and copy HT to device memory
     cudaMalloc((void**)&valHT, sizeof(double) * (HT->N));
@@ -182,97 +186,170 @@ void critical_kernel_wrapper(sparse_rcs * HT,
     cudaMemcpy(colHT, HT->j, sizeof(int) * (HT->N), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&rowPHT, sizeof(int) * (C->m + 1));
-    
-    //descriptors and pointers for compute
-    cusparseSpMatDescr_t matA, matB, matC;
-    void* dBuf1 = NULL;
-    void* dBuf2 = NULL;
-    size_t bufSize1 = 0;
-    size_t bufSize2 = 0;
 
-    //create cusparseCsr matrices
-    cusparseCreateCsr(&matA, C->m, C->n, C->N,
-                      rcsCi, Cj, CeeTv,
-                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseMatDescr_t matA, matB, matC;
+    cusparseCreateMatDescr(&matA);
+    cusparseCreateMatDescr(&matB);
+    cusparseCreateMatDescr(&matC);
 
-    cusparseCreateCsr(&matB, HT->m, HT->n, HT->N,
-                      rowHT, colHT, valHT,
-                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseSetMatType(matA,CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(matA,CUSPARSE_INDEX_BASE_ZERO);  
 
-    cusparseCreateCsr(&matC, C->m, HT->n, 0,
-                      NULL, NULL, NULL,
-                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+    cusparseSetMatType(matB,CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(matB,CUSPARSE_INDEX_BASE_ZERO); 
 
-    //computing
-    cusparseSpGEMMDescr_t spgemmDesc;
-    cusparseSpGEMM_createDescr(&spgemmDesc);
+    cusparseSetMatType(matC,CUSPARSE_MATRIX_TYPE_GENERAL);
+    cusparseSetMatIndexBase(matC,CUSPARSE_INDEX_BASE_ZERO); 
 
-    cusparseSpGEMM_workEstimation(handle, opA, opB, 
-                                      &alpha, matA, matB, &beta, matC,
-                                      computeType, CUSPARSE_SPGEMM_DEFAULT,
-                                      spgemmDesc, &bufSize1, NULL);
-    cudaMalloc((void**) &dBuf1, bufSize1);                            
+    cusparseXcsrgemmNnz(handle, opA, opB,
+                        C->m, HT->n, C->n,
+                        matA, C->N, rcsCi, Cj,
+                        matB, HT->N, rowHT, colHT,
+                        matC, rowPHT, nnzC);
 
-    cusparseSpGEMM_workEstimation(handle, opA, opB,
-                                      &alpha, matA, matB, &beta, matC,
-                                      computeType, CUSPARSE_SPGEMM_DEFAULT,
-                                      spgemmDesc, &bufSize1, dBuf1);
-    
-    cusparseSpGEMM_compute(handle, opA, opB,
-                               &alpha, matA, matB, &beta, matC,
-                               computeType, CUSPARSE_SPGEMM_DEFAULT,
-                               spgemmDesc, &bufSize2, NULL);
-    cudaMalloc((void**) &dBuf2, bufSize2);
+    cudaDeviceSynchronize();
 
-    cusparseSpGEMM_compute(handle, opA, opB,
-                                           &alpha, matA, matB, &beta, matC,
-                                           computeType, CUSPARSE_SPGEMM_DEFAULT,
-                                           spgemmDesc, &bufSize2, dBuf2);
+    printf("first step finished\n");
 
-    //computation done. copy sizes of matrixC (intermediate matrix)
-    int64_t C_num_rows, C_num_cols, C_nnz;
-    cusparseSpMatGetSize(matC, &C_num_rows, &C_num_cols,
-                                         &C_nnz);
+    int Cnnz = *nnzC;
 
-    //allocate and copy to the device pointers for matrix C
-    cudaMalloc((void**) &colPHT, C_nnz * sizeof(int));
-    cudaMalloc((void**) &valPHT, C_nnz * sizeof(double));
+    cudaMalloc((void**)&colPHT, sizeof(int)* Cnnz);
+    cudaMalloc((void**)&valPHT, sizeof(double)* Cnnz);
 
-    cusparseCsrSetPointers(matC, rowPHT, colPHT, valPHT);       
+    cusparseDcsrgemm(handle, opA, opB, C->m, HT->n, C->n,
+        matA, C->N,
+        CeeTv, rcsCi, Cj,
+        matB, HT->N,
+        valHT, rowHT, colHT,
+        matC,
+        valPHT, rowPHT, colPHT); 
 
-    cusparseSpGEMM_copy(handle, opA, opB,
-                            &alpha, matA, matB, &beta, matC,
-                            computeType, CUSPARSE_SPGEMM_DEFAULT, spgemmDesc);
+    cudaDeviceSynchronize();
 
-    //destroy descriptors
-    cusparseSpGEMM_destroyDescr(spgemmDesc);
-    cusparseDestroySpMat(matA);
-    cusparseDestroySpMat(matB);
-    cusparseDestroySpMat(matC);
-    cusparseDestroy(handle);
+    printf("cusparsegemm finished\n");
 
     //allocate and copy PHT from device to host
-    double *h_valPHT;
-    int *h_rowPHT, *h_colPHT;
+    double * h_valPHT;
+    int *h_rowPHT, *h_colPHT;   
 
-    h_valPHT = (double*)malloc(C_nnz * sizeof(double));
-    h_rowPHT = (int*)malloc(C_num_rows * sizeof(int));
-    h_colPHT = (int*)malloc(C_num_cols * sizeof(int));
+    // double * h_valPHT = new double[2];
 
-    cudaMemcpy(h_valPHT, valPHT, C_nnz * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_rowPHT, rowPHT, C_num_rows * sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_colPHT, colPHT, C_num_cols * sizeof(int), cudaMemcpyDeviceToHost);
+    // std::vector<float> h_valPHT((*nnzC) * sizeof(float)); 
+    // cudaMemcpy(h_valPHT.data(), valPHT, (*nnzC) * sizeof(double), cudaMemcpyDeviceToHost);
 
-    P_HT_rcs = (sparse_rcs*)malloc(sizeof(sparse_rcs));
-    P_HT_rcs->N = C_nnz;
-    P_HT_rcs->m = C_num_rows;
-    P_HT_rcs->n = C_num_cols;
-    P_HT_rcs->v = h_valPHT;
-    P_HT_rcs->r = h_rowPHT;
-    P_HT_rcs->j = h_colPHT;
+    // h_valPHT = (double*)malloc(Cnnz * sizeof(double));
+    // h_rowPHT = (int*)malloc((C->m+1) * sizeof(int));
+    // h_colPHT = (int*)malloc(Cnnz * sizeof(int));
+
+    // cudaMemcpy(h_valPHT, valPHT, (*nnzC) * sizeof(double), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(h_rowPHT, rowPHT, (C->m+1) * sizeof(int), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(h_colPHT, colPHT, (*nnzC) * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // printf("matrix copied from device to host");
+
+    // P_HT_rcs = (sparse_rcs*)malloc(sizeof(sparse_rcs));
+    // P_HT_rcs->N = (*nnzC);
+    // P_HT_rcs->m = C->m;
+    // P_HT_rcs->n = HT->n;
+    // P_HT_rcs->v = h_valPHT;
+    // P_HT_rcs->r = h_rowPHT;
+    // P_HT_rcs->j = h_colPHT;
+
+    // printf("P_HT initialized");
+
+
+    
+    
+    // //descriptors and pointers for compute
+    // cusparseSpMatDescr_t matA, matB, matC;
+    // void* dBuf1 = NULL;
+    // void* dBuf2 = NULL;
+    // size_t bufSize1 = 0;
+    // size_t bufSize2 = 0;
+
+    // //create cusparseCsr matrices
+    // cusparseCreateCsr(&matA, C->m, C->n, C->N,
+    //                   rcsCi, Cj, CeeTv,
+    //                   CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+    //                   CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+    // cusparseCreateCsr(&matB, HT->m, HT->n, HT->N,
+    //                   rowHT, colHT, valHT,
+    //                   CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+    //                   CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+    // cusparseCreateCsr(&matC, C->m, HT->n, 0,
+    //                   NULL, NULL, NULL,
+    //                   CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+    //                   CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+    // //computing
+    // cusparseSpGEMMDescr_t spgemmDesc;
+    // cusparseSpGEMM_createDescr(&spgemmDesc);
+
+    // cusparseSpGEMM_workEstimation(handle, opA, opB, 
+    //                                   &alpha, matA, matB, &beta, matC,
+    //                                   computeType, CUSPARSE_SPGEMM_DEFAULT,
+    //                                   spgemmDesc, &bufSize1, NULL);
+    // cudaMalloc((void**) &dBuf1, bufSize1);                            
+
+    // cusparseSpGEMM_workEstimation(handle, opA, opB,
+    //                                   &alpha, matA, matB, &beta, matC,
+    //                                   computeType, CUSPARSE_SPGEMM_DEFAULT,
+    //                                   spgemmDesc, &bufSize1, dBuf1);
+    
+    // cusparseSpGEMM_compute(handle, opA, opB,
+    //                            &alpha, matA, matB, &beta, matC,
+    //                            computeType, CUSPARSE_SPGEMM_DEFAULT,
+    //                            spgemmDesc, &bufSize2, NULL);
+    // cudaMalloc((void**) &dBuf2, bufSize2);
+
+    // cusparseSpGEMM_compute(handle, opA, opB,
+    //                                        &alpha, matA, matB, &beta, matC,
+    //                                        computeType, CUSPARSE_SPGEMM_DEFAULT,
+    //                                        spgemmDesc, &bufSize2, dBuf2);
+
+    // //computation done. copy sizes of matrixC (intermediate matrix)
+    // int64_t C_num_rows, C_num_cols, C_nnz;
+    // cusparseSpMatGetSize(matC, &C_num_rows, &C_num_cols,
+    //                                      &C_nnz);
+
+    // //allocate and copy to the device pointers for matrix C
+    // cudaMalloc((void**) &colPHT, C_nnz * sizeof(int));
+    // cudaMalloc((void**) &valPHT, C_nnz * sizeof(double));
+
+    // cusparseCsrSetPointers(matC, rowPHT, colPHT, valPHT);       
+
+    // cusparseSpGEMM_copy(handle, opA, opB,
+    //                         &alpha, matA, matB, &beta, matC,
+    //                         computeType, CUSPARSE_SPGEMM_DEFAULT, spgemmDesc);
+
+    // //destroy descriptors
+    // cusparseSpGEMM_destroyDescr(spgemmDesc);
+    // cusparseDestroySpMat(matA);
+    // cusparseDestroySpMat(matB);
+    // cusparseDestroySpMat(matC);
+    // cusparseDestroy(handle);
+
+    // //allocate and copy PHT from device to host
+    // double *h_valPHT;
+    // int *h_rowPHT, *h_colPHT;
+
+    // h_valPHT = (double*)malloc(C_nnz * sizeof(double));
+    // h_rowPHT = (int*)malloc(C_num_rows * sizeof(int));
+    // h_colPHT = (int*)malloc(C_num_cols * sizeof(int));
+
+    // cudaMemcpy(h_valPHT, valPHT, C_nnz * sizeof(double), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(h_rowPHT, rowPHT, C_num_rows * sizeof(int), cudaMemcpyDeviceToHost);
+    // cudaMemcpy(h_colPHT, colPHT, C_num_cols * sizeof(int), cudaMemcpyDeviceToHost);
+
+    // P_HT_rcs = (sparse_rcs*)malloc(sizeof(sparse_rcs));
+    // P_HT_rcs->N = C_nnz;
+    // P_HT_rcs->m = C_num_rows;
+    // P_HT_rcs->n = C_num_cols;
+    // P_HT_rcs->v = h_valPHT;
+    // P_HT_rcs->r = h_rowPHT;
+    // P_HT_rcs->j = h_colPHT;
 
     timer_stop();
 
