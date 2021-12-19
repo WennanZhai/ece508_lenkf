@@ -4,7 +4,7 @@
 #include "ensemble.h"
 #include "arg_bundle.h"
 #include "lenkf.h"
-
+#include "../kernel_code/compute.h"
 
 void compute_P_HT(arg_bundle *ab, const sparse_rcs *H,
                   const int row_H, const char name_H,

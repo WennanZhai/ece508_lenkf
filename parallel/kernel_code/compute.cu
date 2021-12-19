@@ -116,7 +116,13 @@ void critical_kernel_wrapper(sparse_rcs * HT,
     cusparseStatus_t status;
     cusparseHandle_t handle;
 
-    status = cusparseCreate(&handle); 
+    status = cusparseCreate(&handle);
+    double * h_valPHT;
+    int *h_rowPHT, *h_colPHT;
+    P_HT_rcs = (sparse_rcs*)malloc(sizeof(sparse_rcs));
+     h_valPHT = (double*)malloc((200000)* sizeof(double));
+     h_rowPHT = (int*)malloc((C->m+1) * sizeof(int));
+     h_colPHT = (int*)malloc((200000) * sizeof(int));
 
     timer_start("Allocating GPU memory.");
     cudaMalloc((void**) &ev, sizeof(double) * (e->X->m * e->X->n));
@@ -229,11 +235,9 @@ void critical_kernel_wrapper(sparse_rcs * HT,
     printf("cusparsegemm finished\n");
 
     //allocate and copy PHT from device to host
-    double * h_valPHT;
-    int *h_rowPHT, *h_colPHT;   
-
-    // double * h_valPHT = new double[2];
-
+//    double * h_valPHT;
+//    int *h_rowPHT, *h_colPHT;
+//    double * h_valPHT = new double[2];
     // std::vector<float> h_valPHT((*nnzC) * sizeof(float)); 
     // cudaMemcpy(h_valPHT.data(), valPHT, (*nnzC) * sizeof(double), cudaMemcpyDeviceToHost);
 
@@ -241,21 +245,21 @@ void critical_kernel_wrapper(sparse_rcs * HT,
     // h_rowPHT = (int*)malloc((C->m+1) * sizeof(int));
     // h_colPHT = (int*)malloc(Cnnz * sizeof(int));
 
-    // cudaMemcpy(h_valPHT, valPHT, (*nnzC) * sizeof(double), cudaMemcpyDeviceToHost);
-    // cudaMemcpy(h_rowPHT, rowPHT, (C->m+1) * sizeof(int), cudaMemcpyDeviceToHost);
-    // cudaMemcpy(h_colPHT, colPHT, (*nnzC) * sizeof(int), cudaMemcpyDeviceToHost);
+     cudaMemcpy(h_valPHT, valPHT, (*nnzC) * sizeof(double), cudaMemcpyDeviceToHost);
+     cudaMemcpy(h_rowPHT, rowPHT, (C->m+1) * sizeof(int), cudaMemcpyDeviceToHost);
+     cudaMemcpy(h_colPHT, colPHT, (*nnzC) * sizeof(int), cudaMemcpyDeviceToHost);
 
-    // printf("matrix copied from device to host");
+     printf("matrix copied from device to host\n");
 
-    // P_HT_rcs = (sparse_rcs*)malloc(sizeof(sparse_rcs));
-    // P_HT_rcs->N = (*nnzC);
-    // P_HT_rcs->m = C->m;
-    // P_HT_rcs->n = HT->n;
-    // P_HT_rcs->v = h_valPHT;
-    // P_HT_rcs->r = h_rowPHT;
-    // P_HT_rcs->j = h_colPHT;
+//     P_HT_rcs = (sparse_rcs*)malloc(sizeof(sparse_rcs));
+     P_HT_rcs->N = (*nnzC);
+     P_HT_rcs->m = C->m;
+     P_HT_rcs->n = HT->n;
+     P_HT_rcs->v = h_valPHT;
+     P_HT_rcs->r = h_rowPHT;
+     P_HT_rcs->j = h_colPHT;
 
-    // printf("P_HT initialized");
+     printf("P_HT initialized\n");
 
 
     
