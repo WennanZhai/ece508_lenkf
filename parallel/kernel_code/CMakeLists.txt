@@ -46,7 +46,10 @@ set_target_properties( test_kernel PROPERTIES
                        CUDA_RESOLVE_DEVICE_SYMBOLS ON
                       )
 
-target_link_libraries(test_kernel ${CUDA_LIBRARIES} ${CUDA_cusparse_LIBRARY})
+target_link_libraries(test_kernel 
+  ${CUDA_LIBRARIES} 
+  ${CUDA_cusparse_LIBRARY}
+)
 
 include_directories(test_kernel
   ${PROJECT_SOURCE_DIR}
